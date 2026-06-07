@@ -1,7 +1,12 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+const nextConfig = {
+  serverExternalPackages: ["@prisma/client", "mariadb"],
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        ".prisma/client/default": "./node_modules/.prisma/client/default.js",
+      },
+    },
+  },
 };
 
 export default nextConfig;
