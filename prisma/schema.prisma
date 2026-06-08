@@ -17,56 +17,54 @@ enum PengaduanStatus {
   Ditolak
   Selesai
 }
-
 model Kategori {
   id_kategori   String      @id @db.Char(5)
   nama_kategori String      @db.VarChar(30)
   deskripsi     String?     @db.VarChar(255)
   is_deleted    Int         @default(0) @db.TinyInt
+  created_at    DateTime    @default(now()) @db.DateTime(0)
+  updated_at    DateTime    @updatedAt @db.DateTime(0)
 
-  // Relasi balik ke Pengaduan
   pengaduans    Pengaduan[]
-
   @@map("kategori")
 }
 
 model Users {
-  id_user      String      @id @db.Char(6) // Contoh format: USR001
+  id_user      String      @id @db.Char(6)
   nis_nip      String      @db.VarChar(6)
   nama_lengkap String      @db.VarChar(30)
   username     String      @db.VarChar(12)
   password     String      @db.VarChar(255)
   role         UserRole
   is_deleted   Int         @default(0) @db.TinyInt
+  created_at   DateTime    @default(now()) @db.DateTime(0)
+  updated_at   DateTime    @updatedAt @db.DateTime(0)
 
-  // Relasi balik ke Pengaduan
   pengaduans   Pengaduan[]
-
   @@map("users")
 }
 
 model Pengaduan {
-  id_pengaduan  String          @id @db.Char(10) // Contoh format: LPR2026001
+  id_pengaduan  String          @id @db.Char(10)
   tgl_kejadian  DateTime        @db.Date
   id_user       String          @db.Char(6)
   id_kategori   String          @db.Char(5)
   judul_laporan String          @db.VarChar(30)
   isi_laporan   String          @db.Text
+  foto          String?         @db.VarChar(255)
   status        PengaduanStatus @default(Pending)
   is_deleted    Int             @default(0) @db.TinyInt
+  created_at    DateTime        @default(now()) @db.DateTime(0)
+  updated_at    DateTime        @updatedAt @db.DateTime(0)
 
-  // Definisi Relasi (Tipe data Foreign Key wajib sama dengan Primary Key pasangannya)
   user          Users           @relation(fields: [id_user], references: [id_user], onUpdate: Cascade, onDelete: Restrict)
   kategori      Kategori        @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict)
-  
-  // Relasi balik ke Log
   logs          LogStatusPengaduan[]
 
   @@index([id_user])
   @@index([id_kategori])
   @@map("pengaduan")
 }
-
 model LogStatusPengaduan {
   id_log        String    @id @db.Char(10) // Contoh format: LOG0000001
   id_pengaduan  String    @db.Char(10)

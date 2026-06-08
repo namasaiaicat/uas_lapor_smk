@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
-import Link from 'next/link';
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
   LayoutDashboardIcon,
   ChartBarIcon,
@@ -21,31 +21,31 @@ import {
   UsersIcon,
   ShoppingCartIcon,
   Trash,
-} from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import Image from 'next/image';
-import { getDashboardNavItems } from '@/lib/dashboard-nav';
+} from "lucide-react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { getDashboardNavItems } from "@/lib/dashboard-nav";
 
-type NavTitle = 'Dashboard' | 'Produk' | 'User' | 'Laporan' | 'Kasir' | 'Recycle Bin';
+type NavTitle = "Dashboard" | "Pengaduan" | "User" | "Laporan" | "Recycle Bin";
 const SIDEBAR_ICONS: Record<NavTitle, React.ReactNode> = {
   Dashboard: <LayoutDashboardIcon />,
-  Produk: <ChartBarIcon />,
+  Pengaduan: <ChartBarIcon />,
   User: <UsersIcon />,
   Laporan: <FolderIcon />,
-  Kasir: <ShoppingCartIcon />,
-  'Recycle Bin': <Trash />,
+  "Recycle Bin": <Trash />,
 };
 
 const SIDEBAR_LABELS: Record<NavTitle, string> = {
-  Dashboard: 'Dashboard',
-  Produk: 'Kelola Produk',
-  User: 'Kelola Pengguna',
-  Laporan: 'Lihat Laporan',
-  Kasir: 'Transaksional',
-  'Recycle Bin': 'Recycle Bin',
+  Dashboard: "Dashboard",
+  Pengaduan: "Pengaduan",
+  User: "Kelola Pengguna",
+  Laporan: "Lihat Laporan",
+  "Recycle Bin": "Recycle Bin",
 };
 
-export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export default function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
   const role = session?.user?.role;
 
@@ -59,9 +59,9 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
   });
 
   const currentUser = {
-    name: session?.user?.name || 'User',
-    email: session?.user?.username || 'Guest',
-    avatar: '',
+    name: session?.user?.name || "User",
+    email: session?.user?.username || "Guest",
+    avatar: "",
   };
 
   return (
@@ -69,12 +69,16 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!" size="lg">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:p-1.5! items-center justify-center"
+              size="lg"
+            >
               <Link href="/dashboard">
                 <Image
-                  src="/logo-sarimadu-Photoroom.png"
-                  width={200}
-                  height={200}
+                  src="/logo-laporsmkdark.svg"
+                  width={150}
+                  height={150}
                   alt="logo-sarimadu"
                 />
               </Link>
