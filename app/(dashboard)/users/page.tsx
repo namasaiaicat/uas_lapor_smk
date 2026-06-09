@@ -229,19 +229,19 @@ export default function UserPage() {
       <div className="p-4 md:p-6 relative min-h-screen pb-28 md:pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
           <div className="min-w-0">
-            <h1 className="text-4xl md:text-5xl font-semibold mb-2 flex items-center gap-3">
-              <UserIcon className="size-10 text-primary" />
+            <h1 className="text-lg md:text-2xl font-semibold mb-2 flex items-center gap-3">
+              <UserIcon className="size-6 text-primary" />
               Kelola User
             </h1>
-            <p className="text-muted-foreground text-2xl hidden md:block">
+            <p className="text-muted-foreground text-base hidden md:block">
               Kelola data pengguna, hak akses, dan informasi akun secara
               terpusat.
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-              <Button className="hidden md:flex h-16 text-primary-foreground cursor-pointer bg-primary hover:bg-primary/90 font-semibold text-xl px-6">
-                <PlusIcon className="size-6 mr-2" /> Tambah User
+              <Button className="hidden md:flex h-12 text-primary-foreground cursor-pointer bg-primary hover:bg-primary/90 font-semibold text-base px-6">
+                <PlusIcon className="size-4 mr-2" /> Tambah User
               </Button>
             </DialogTrigger>
             <DialogTrigger asChild>
@@ -468,7 +468,7 @@ export default function UserPage() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow className="odd:bg-muted/50" key={user.id_user}>
-                    <TableCell className="pl-4 font-mono text-sm">
+                    <TableCell className="pl-4 font-semibold text-base">
                       {user.id_user}
                     </TableCell>
                     <TableCell className="font-medium">
@@ -478,7 +478,7 @@ export default function UserPage() {
                     <TableCell>@{user.username}</TableCell>
                     <TableCell className="capitalize">{user.role}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-4">
+                      <div className="flex justify-center items-center gap-4">
                         <Button
                           variant="ghost"
                           onClick={() => handleEdit(user)}

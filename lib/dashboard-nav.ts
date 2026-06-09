@@ -16,7 +16,6 @@ export function getDashboardNavItems(
     items.push(
       { title: "Pengaduan", url: "/pengaduan" },
       { title: "User", url: "/users" },
-      { title: "Laporan", url: "/laporan" },
       { title: "Recycle Bin", url: "/recycle-bin" },
     );
   }

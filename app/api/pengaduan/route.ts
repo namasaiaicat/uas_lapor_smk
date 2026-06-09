@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { Prisma } from "@prisma/client";
+import { Pengaduan, Prisma } from "@prisma/client";
 
 interface ApiResponse {
   success: boolean;
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json<ApiResponse>(
-        { success: false, message: "Kamu belum login / tidak terautentikasi" },
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
@@ -26,9 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const whereClause: Prisma.PengaduanWhereInput = {
-      is_deleted: 0,
-    };
+    const whereClause: Prisma.PengaduanWhereInput = { is_deleted: 0 };
 
     if (role === "siswa") {
       whereClause.id_user = id_user;
@@ -38,38 +36,21 @@ export async function GET(request: NextRequest) {
       whereClause.judul_laporan = { contains: search };
     }
 
+    // Ambil data array list
     const pengaduans = await prisma.pengaduan.findMany({
       where: whereClause,
       include: {
-        user: {
-          select: {
-            nama_lengkap: true,
-            nis_nip: true,
-          },
-        },
-        kategori: {
-          select: {
-            nama_kategori: true,
-          },
-        },
+        user: { select: { nama_lengkap: true, nis_nip: true } },
+        kategori: { select: { nama_kategori: true } },
       },
-      orderBy: {
-        created_at: "desc",
-      },
+      orderBy: { created_at: "desc" },
     });
 
-    return NextResponse.json<ApiResponse>({
-      success: true,
-      data: pengaduans,
-    });
+    // Mengembalikan array aman untuk .map() di frontend tabel
+    return NextResponse.json({ success: true, data: pengaduans });
   } catch (error) {
-    console.error("Prisma GET Pengaduan Error:", error);
-    return NextResponse.json<ApiResponse>(
-      {
-        success: false,
-        message: "Gagal mengambil data pengaduan",
-        error: error instanceof Error ? error.message : "Internal Server Error",
-      },
+    return NextResponse.json(
+      { success: false, message: "Gagal mengambil data" },
       { status: 500 },
     );
   }
@@ -109,17 +90,16 @@ export async function POST(request: NextRequest) {
     }
 
     const lastPengaduan = await prisma.pengaduan.findFirst({
-      orderBy: { id_kategori: "desc" },
+      orderBy: { created_at: "desc" },
     });
 
     let nextId = "PGD000001";
 
     if (lastPengaduan) {
-      const lastNumber = parseInt(
-        lastPengaduan.id_pengaduan.replace("PGD", ""),
-      );
-      const nextNumber = lastNumber + 1;
+      const match = lastPengaduan.id_pengaduan.match(/\d+/);
+      const lastNumber = match ? parseInt(match[0], 10) : 0;
 
+      const nextNumber = lastNumber + 1;
       nextId = `PGD${String(nextNumber).padStart(6, "0")}`;
     }
 

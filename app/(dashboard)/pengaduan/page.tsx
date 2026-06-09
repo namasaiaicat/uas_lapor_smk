@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react"; // Untuk ikon di tombol pemantik
+import { Calendar as CalendarIcon, Info, Proportions } from "lucide-react"; // Untuk ikon di tombol pemantik
 import {
   Popover,
   PopoverContent,
@@ -50,9 +50,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Plus, Eye, Trash2, Loader2, FileText } from "lucide-react";
+import { Search, Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { SiteHeader } from "@/components/site-header";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,7 +138,10 @@ export default function PengaduanPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  // Modal states
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
   const [detailModal, setDetailModal] = useState<Pengaduan | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -301,54 +305,57 @@ export default function PengaduanPage() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isAdmin ? "Manajemen Pengaduan" : "Laporan Saya"}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {isAdmin
-              ? "Kelola seluruh laporan pengaduan siswa"
-              : "Buat dan pantau laporan pengaduanmu"}
-          </p>
+      <SiteHeader header={[{ title: "Pelaporan" }]} />
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg md:text-2xl font-semibold mb-2 flex items-center gap-3">
+              <Proportions />
+              {isAdmin ? "Manajemen Pengaduan" : "Pelaporan"}
+            </h1>
+            <p className="text-muted-foreground text-base mt-1">
+              {isAdmin
+                ? "Kelola seluruh laporan pengaduan siswa"
+                : "Buat dan pantau laporan pengaduanmu"}
+            </p>
+          </div>
+
+          {!isAdmin && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Buat Laporan
+            </Button>
+          )}
         </div>
 
-        {!isAdmin && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Buat Laporan
-          </Button>
+        {/* Search (admin only) */}
+        {isAdmin && (
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Cari judul laporan..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         )}
-      </div>
 
-      {/* Search (admin only) */}
-      {isAdmin && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Cari judul laporan..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      )}
-
-      {isAdmin && (
-        <Card>
-          <CardContent className="p-0">
+        {isAdmin && (
+          <div className="hidden md:block w-full overflow-hidden rounded-xl border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[110px]">ID</TableHead>
-                  <TableHead>Pelapor</TableHead>
-                  <TableHead>Judul</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Tgl Kejadian</TableHead>
-                  <TableHead className="w-[150px]">Status</TableHead>
-                  <TableHead className="w-[100px] text-center">Aksi</TableHead>
+                  <TableHead className="pl-4 w-70">ID Pengaduan</TableHead>
+                  <TableHead className="w-70">Pelapor</TableHead>
+                  <TableHead className="w-90">Judul</TableHead>
+                  <TableHead className="w-90">Kategori</TableHead>
+                  <TableHead className="w-90">Tgl Kejadian</TableHead>
+                  <TableHead className="w-100">Deskripsi</TableHead>
+                  <TableHead className="w-60">Status</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -371,37 +378,49 @@ export default function PengaduanPage() {
                 ) : (
                   pengaduans.map((p) => (
                     <TableRow key={p.id_pengaduan}>
-                      <TableCell className="font-semibold">
+                      <TableCell className="font-semibold text-base">
                         {p.id_pengaduan}
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{p.user.nama_lengkap}</div>
-                        <div className="text-muted-foreground">
+                        <div className="font-medium text-base">
+                          {p.user.nama_lengkap}
+                        </div>
+                        <div className="text-muted-foreground text-sm">
                           {p.user.nis_nip}
                         </div>
                       </TableCell>
-                      <TableCell className="truncate font-medium">
+                      <TableCell className="truncate font-medium text-base">
                         {p.judul_laporan}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-base">
                         {p.kategori.nama_kategori}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-base">
                         {formatDate(p.tgl_kejadian)}
+                      </TableCell>
+                      <TableCell className="truncate font-medium text-base">
+                        {p.isi_laporan}
                       </TableCell>
                       <TableCell>
                         <Select
                           value={p.status}
                           onValueChange={(val) =>
-                            handleUpdateStatus(p.id_pengaduan, val)
+                            setPendingUpdate({
+                              id: p.id_pengaduan,
+                              status: val,
+                            })
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs w-[120px]">
+                          <SelectTrigger className="h-8 text-base">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {STATUS_OPTIONS.map((s) => (
-                              <SelectItem key={s} value={s} className="text-xs">
+                              <SelectItem
+                                key={s}
+                                value={s}
+                                className="text-base"
+                              >
                                 {s}
                               </SelectItem>
                             ))}
@@ -409,14 +428,14 @@ export default function PengaduanPage() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-4">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => setDetailModal(p)}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Info className="size-6" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -424,7 +443,7 @@ export default function PengaduanPage() {
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => setDeleteTarget(p.id_pengaduan)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="size-6" />
                           </Button>
                         </div>
                       </TableCell>
@@ -433,433 +452,478 @@ export default function PengaduanPage() {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* ── SISWA: Card list laporan milik sendiri ── */}
-      {!isAdmin && (
-        <div className="space-y-3">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : pengaduans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center py-14 text-muted-foreground">
-                <FileText className="w-10 h-10 mb-3 opacity-40" />
-                <p className="font-medium">Belum ada laporan</p>
-                <p className="text-sm mt-1">
-                  Klik &ldquo;Buat Laporan&rdquo; untuk membuat laporan baru
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            pengaduans.map((p) => (
-              <Card key={p.id_pengaduan}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-semibold leading-snug">
-                      {p.judul_laporan}
-                    </CardTitle>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${statusColor(p.status)}`}
-                    >
-                      {p.status}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  <p>
-                    <span className="font-medium text-foreground">
-                      Kategori:
-                    </span>{" "}
-                    {p.kategori.nama_kategori}
+        {/* ── SISWA: Card list laporan milik sendiri ── */}
+        {!isAdmin && (
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : pengaduans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center py-14 text-muted-foreground">
+                  <FileText className="w-10 h-10 mb-3 opacity-40" />
+                  <p className="font-medium">Belum ada laporan</p>
+                  <p className="text-sm mt-1">
+                    Klik &ldquo;Buat Laporan&rdquo; untuk membuat laporan baru
                   </p>
-                  <p>
-                    <span className="font-medium text-foreground">
-                      Tgl Kejadian:
-                    </span>{" "}
-                    {formatDate(p.tgl_kejadian)}
-                  </p>
-                  <p className="line-clamp-2 pt-1">{p.isi_laporan}</p>
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
-      )}
+            ) : (
+              pengaduans.map((p) => (
+                <Card key={p.id_pengaduan}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-semibold leading-snug">
+                        {p.judul_laporan}
+                      </CardTitle>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${statusColor(p.status)}`}
+                      >
+                        {p.status}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      <span className="font-medium text-foreground">
+                        Kategori:
+                      </span>{" "}
+                      {p.kategori.nama_kategori}
+                    </p>
+                    <p>
+                      <span className="font-medium text-foreground">
+                        Tgl Kejadian:
+                      </span>{" "}
+                      {formatDate(p.tgl_kejadian)}
+                    </p>
+                    <p className="line-clamp-2 pt-1">{p.isi_laporan}</p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
 
-      {/* ── Modal: Detail Pengaduan (Admin) ── */}
-      <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Detail Pengaduan</DialogTitle>
-          </DialogHeader>
-          {detailModal && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    ID Pengaduan
-                  </p>
-                  <p className="font-mono font-medium truncate">
-                    {detailModal.id_pengaduan}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Status</p>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColor(detailModal.status)}`}
-                  >
-                    {detailModal.status}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    Pelapor
-                  </p>
-                  <p className="font-medium">{detailModal.user.nama_lengkap}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    NIS / NIP
-                  </p>
-                  <p>{detailModal.user.nis_nip}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    Kategori
-                  </p>
-                  <p>{detailModal.kategori.nama_kategori}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    Tgl Kejadian
-                  </p>
-                  <p>{formatDate(detailModal.tgl_kejadian)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
-                  Judul Laporan
-                </p>
-                <p className="font-medium">{detailModal.judul_laporan}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
-                  Isi Laporan
-                </p>
-                <p className="whitespace-pre-wrap leading-relaxed bg-muted/40 rounded-md p-3">
-                  {detailModal.isi_laporan}
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Modal: Buat Laporan (Siswa) ── */}
-      <Dialog
-        open={createOpen}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) {
-            setForm({
-              id_kategori: "",
-              judul_laporan: "",
-              isi_laporan: "",
-              tgl_kejadian: "",
-              foto: "",
-            });
-          }
-        }}
-      >
-        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreate();
-            }}
-          >
+        {/* ── Modal: Detail Pengaduan (Admin) ── */}
+        <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
+          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>Buat Laporan Baru</DialogTitle>
+              <DialogTitle>Detail Pengaduan</DialogTitle>
               <DialogDescription>
-                Masukkan detail laporan pengaduan, sertakan informasi kategori
-                dan tanggal kejadian secara akurat.
+                Teliti dengan saksama sebelum di verifikasi
               </DialogDescription>
             </DialogHeader>
+            {detailModal && (
+              <div className="space-y-6 text-base justify-center">
+                <div className="w-full">
+                  <Image
+                    src={detailModal.foto}
+                    className="w-full rounded-xl"
+                    width={100}
+                    height={100}
+                    alt="Detailed-Foto"
+                  ></Image>
+                </div>
+                <div className="grid grid-cols-3 gap-5">
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      ID Pengaduan
+                    </p>
+                    <p className="font-mono font-medium truncate">
+                      {detailModal.id_pengaduan}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      Status
+                    </p>
+                    <span
+                      className={`text-lg px-3 py-0.5 rounded-full border font-medium ${statusColor(detailModal.status)}`}
+                    >
+                      {detailModal.status}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      Pelapor
+                    </p>
+                    <p className="font-medium">
+                      {detailModal.user.nama_lengkap}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      NIS / NIP
+                    </p>
+                    <p>{detailModal.user.nis_nip}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      Kategori
+                    </p>
+                    <p>{detailModal.kategori.nama_kategori}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg text-muted-foreground mb-0.5">
+                      Tgl Kejadian
+                    </p>
+                    <p>{formatDate(detailModal.tgl_kejadian)}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-lg text-muted-foreground mb-0.5">
+                    Judul Laporan
+                  </p>
+                  <p className="font-medium">{detailModal.judul_laporan}</p>
+                </div>
 
-            <FieldGroup className="py-4">
-              {/* Kategori Pengaduan */}
-              <Field>
-                <Label htmlFor="kategori-add">Kategori Pengaduan</Label>
-                <Select
-                  value={form.id_kategori}
-                  onValueChange={(value) =>
-                    setForm((prev) => ({ ...prev, id_kategori: value }))
-                  }
-                >
-                  <SelectTrigger
-                    id="kategori-add"
-                    className="h-12 text-sm sm:text-lg w-full"
+                <div>
+                  <p className="text-lg text-muted-foreground mb-0.5">
+                    Isi Laporan
+                  </p>
+                  <p className="whitespace-pre-wrap leading-relaxed bg-muted/40 rounded-md p-3">
+                    {detailModal.isi_laporan}
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Modal: Buat Laporan (Siswa) ── */}
+        <Dialog
+          open={createOpen}
+          onOpenChange={(open) => {
+            setCreateOpen(open);
+            if (!open) {
+              setForm({
+                id_kategori: "",
+                judul_laporan: "",
+                isi_laporan: "",
+                tgl_kejadian: "",
+                foto: "",
+              });
+            }
+          }}
+        >
+          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreate();
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle>Buat Laporan Baru</DialogTitle>
+                <DialogDescription>
+                  Masukkan detail laporan pengaduan, sertakan informasi kategori
+                  dan tanggal kejadian secara akurat.
+                </DialogDescription>
+              </DialogHeader>
+
+              <FieldGroup className="py-4">
+                {/* Kategori Pengaduan */}
+                <Field>
+                  <Label htmlFor="kategori-add">Kategori Pengaduan</Label>
+                  <Select
+                    value={form.id_kategori}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({ ...prev, id_kategori: value }))
+                    }
                   >
-                    <SelectValue placeholder="Pilih Kategori" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kategoris.map((kat) => (
-                      <SelectItem
-                        key={kat.id_kategori}
-                        value={kat.id_kategori}
-                        className="text-sm sm:text-lg"
-                      >
-                        {kat.nama_kategori}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {/* Tanggal Kejadian */}
-              <Field>
-                <Label htmlFor="tgl-add">Tanggal Kejadian</Label>
-                <div className="mt-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="tgl-add"
-                        variant="outline"
-                        className={`w-full sm:h-12 h-10 px-3 text-left font-normal text-base justify-start gap-2 rounded-xl border-2 ${
-                          !form.tgl_kejadian && "text-muted-foreground"
-                        }`}
-                      >
-                        <CalendarIcon className="size-5 text-muted-foreground shrink-0" />
-                        {form.tgl_kejadian ? (
-                          new Date(form.tgl_kejadian).toLocaleDateString(
-                            "id-ID",
-                            {
-                              day: "2-digit",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )
-                        ) : (
-                          <span>Pilih tanggal kejadian</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto p-0 rounded-xl shadow-lg border"
-                      align="start"
+                    <SelectTrigger
+                      id="kategori-add"
+                      className="h-12 text-sm sm:text-lg w-full"
                     >
-                      <div className="flex flex-col">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            form.tgl_kejadian
-                              ? new Date(form.tgl_kejadian)
-                              : undefined
-                          }
-                          onSelect={(date) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              tgl_kejadian: date
-                                ? format(date, "yyyy-MM-dd")
-                                : "",
-                            }))
-                          }
-                        />
-                        {form.tgl_kejadian && (
-                          <div className="p-2 border-t bg-muted/20">
-                            <Button
-                              type="button"
-                              className="w-full h-9 text-sm rounded-lg"
-                              variant="ghost"
-                              onClick={() =>
-                                setForm((prev) => ({
-                                  ...prev,
-                                  tgl_kejadian: "",
-                                }))
-                              }
-                            >
-                              Hapus Tanggal
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </Field>
-
-              <Field>
-                <Label htmlFor="judul-add">Judul Laporan</Label>
-                <Input
-                  id="judul-add"
-                  placeholder="Ketik judul singkat laporan..."
-                  value={form.judul_laporan}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      judul_laporan: e.target.value,
-                    }))
-                  }
-                  className="sm:h-12 h-10 text-base"
-                />
-              </Field>
-
-              {/* Isi Laporan */}
-              <Field>
-                <Label htmlFor="isi-add">Isi Laporan Pengaduan</Label>
-                <Textarea
-                  id="isi-add"
-                  placeholder="Ceritakan kronologi kejadian secara lengkap di sini..."
-                  value={form.isi_laporan}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      isi_laporan: e.target.value,
-                    }))
-                  }
-                  className="min-h-[120px] text-base p-3"
-                />
-              </Field>
-              <Field>
-                <Label htmlFor="foto-add">Foto Bukti Laporan (Opsional)</Label>
-                <div className="mt-2">
-                  {form.foto ? (
-                    <div className="">
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        className="h-10 px-5 rounded-lg mb-2 text-sm sm:text-base font-medium shadow-md cursor-pointer hover:bg-red-600"
-                        onClick={() =>
-                          setForm((prev) => ({ ...prev, foto: "" }))
-                        }
-                      >
-                        Hapus Foto
-                      </Button>
-                      <div className="relative overflow-hidden rounded-xl border bg-muted shadow-sm">
-                        <Image
-                          src={form.foto}
-                          alt="Preview Bukti Laporan"
-                          className="h-auto w-full max-h-90 object-cover"
-                          width={100}
-                          height={100}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <label
-                      htmlFor="foto-add"
-                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer bg-background hover:bg-muted/50 border-muted-foreground/20 transition-colors p-4 text-center"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg
-                          className="w-8 h-8 mb-3 text-muted-foreground"
-                          aria-hidden="true"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 20 16"
+                      <SelectValue placeholder="Pilih Kategori" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kategoris.map((kat) => (
+                        <SelectItem
+                          key={kat.id_kategori}
+                          value={kat.id_kategori}
+                          className="text-sm sm:text-lg"
                         >
-                          <path
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                          {kat.nama_kategori}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {/* Tanggal Kejadian */}
+                <Field>
+                  <Label htmlFor="tgl-add">Tanggal Kejadian</Label>
+                  <div className="mt-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="tgl-add"
+                          variant="outline"
+                          className={`w-full sm:h-12 h-10 px-3 text-left font-normal text-base justify-start gap-2 rounded-xl border-2 ${
+                            !form.tgl_kejadian && "text-muted-foreground"
+                          }`}
+                        >
+                          <CalendarIcon className="size-5 text-muted-foreground shrink-0" />
+                          {form.tgl_kejadian ? (
+                            new Date(form.tgl_kejadian).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              },
+                            )
+                          ) : (
+                            <span>Pilih tanggal kejadian</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto p-0 rounded-xl shadow-lg border"
+                        align="start"
+                      >
+                        <div className="flex flex-col">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              form.tgl_kejadian
+                                ? new Date(form.tgl_kejadian)
+                                : undefined
+                            }
+                            onSelect={(date) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                tgl_kejadian: date
+                                  ? format(date, "yyyy-MM-dd")
+                                  : "",
+                              }))
+                            }
                           />
-                        </svg>
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          <span className="font-semibold">
-                            Klik untuk unggah
-                          </span>{" "}
-                          atau seret gambar ke sini
-                        </p>
-                        <p className="text-xs text-muted-foreground/70">
-                          PNG, JPG, atau WEBP (Maks. 2MB)
-                        </p>
-                      </div>
-                      <input
-                        id="foto-add"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
+                          {form.tgl_kejadian && (
+                            <div className="p-2 border-t bg-muted/20">
+                              <Button
+                                type="button"
+                                className="w-full h-9 text-sm rounded-lg"
+                                variant="ghost"
+                                onClick={() =>
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    tgl_kejadian: "",
+                                  }))
+                                }
+                              >
+                                Hapus Tanggal
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </Field>
 
-                          // Validasi Ukuran File (2MB)
-                          if (file.size > 2 * 1024 * 1024) {
-                            toast.error(
-                              "Ukuran gambar terlalu besar! Maksimal 2MB.",
-                            );
-                            e.target.value = "";
-                            return;
+                <Field>
+                  <Label htmlFor="judul-add">Judul Laporan</Label>
+                  <Input
+                    id="judul-add"
+                    placeholder="Ketik judul singkat laporan..."
+                    value={form.judul_laporan}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        judul_laporan: e.target.value,
+                      }))
+                    }
+                    className="sm:h-12 h-10 text-base"
+                  />
+                </Field>
+
+                {/* Isi Laporan */}
+                <Field>
+                  <Label htmlFor="isi-add">Isi Laporan Pengaduan</Label>
+                  <Textarea
+                    id="isi-add"
+                    placeholder="Ceritakan kronologi kejadian secara lengkap di sini..."
+                    value={form.isi_laporan}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        isi_laporan: e.target.value,
+                      }))
+                    }
+                    className="min-h-[120px] text-base p-3"
+                  />
+                </Field>
+                <Field>
+                  <Label htmlFor="foto-add">
+                    Foto Bukti Laporan (Opsional)
+                  </Label>
+                  <div className="mt-2">
+                    {form.foto ? (
+                      <div className="">
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="h-10 px-5 rounded-lg mb-2 text-sm sm:text-base font-medium shadow-md cursor-pointer hover:bg-red-600"
+                          onClick={() =>
+                            setForm((prev) => ({ ...prev, foto: "" }))
                           }
+                        >
+                          Hapus Foto
+                        </Button>
+                        <div className="relative overflow-hidden rounded-xl border bg-muted shadow-sm">
+                          <Image
+                            src={form.foto}
+                            alt="Preview Bukti Laporan"
+                            className="h-auto w-full max-h-90 object-cover"
+                            width={100}
+                            height={100}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="foto-add"
+                        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer bg-background hover:bg-muted/50 border-muted-foreground/20 transition-colors p-4 text-center"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg
+                            className="w-8 h-8 mb-3 text-muted-foreground"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 20 16"
+                          >
+                            <path
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                            />
+                          </svg>
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            <span className="font-semibold">
+                              Klik untuk unggah
+                            </span>{" "}
+                            atau seret gambar ke sini
+                          </p>
+                          <p className="text-xs text-muted-foreground/70">
+                            PNG, JPG, atau WEBP (Maks. 2MB)
+                          </p>
+                        </div>
+                        <input
+                          id="foto-add"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
 
-                          // Mengubah file ke base64 string murni
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setForm((prev) => ({
-                              ...prev,
-                              foto: reader.result as string,
-                            }));
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-              </Field>
-            </FieldGroup>
+                            // Validasi Ukuran File (2MB)
+                            if (file.size > 2 * 1024 * 1024) {
+                              toast.error(
+                                "Ukuran gambar terlalu besar! Maksimal 2MB.",
+                              );
+                              e.target.value = "";
+                              return;
+                            }
 
-            <DialogFooter className="gap-3 flex-col-reverse sm:flex-row">
-              <Button
-                type="button"
-                variant="outline"
-                className="text-lg p-5"
-                onClick={() => setCreateOpen(false)}
+                            // Mengubah file ke base64 string murni
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setForm((prev) => ({
+                                ...prev,
+                                foto: reader.result as string,
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </Field>
+              </FieldGroup>
+
+              <DialogFooter className="gap-3 flex-col-reverse sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="text-lg p-5"
+                  onClick={() => setCreateOpen(false)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  className="text-lg p-5"
+                  disabled={submitting}
+                >
+                  {submitting ? "Mengirim..." : "Kirim Laporan"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Alert: Konfirmasi Hapus ── */}
+        <AlertDialog
+          open={!!deleteTarget}
+          onOpenChange={() => setDeleteTarget(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Laporan?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Laporan dengan ID{" "}
+                <span className="font-mono font-semibold">{deleteTarget}</span>{" "}
+                akan dihapus dari sistem. Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDelete}
               >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                className="text-lg p-5"
-                disabled={submitting}
-              >
-                {submitting ? "Mengirim..." : "Kirim Laporan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Alert: Konfirmasi Hapus ── */}
+                Hapus
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      {/* alert untuk konfirmasi update status */}
       <AlertDialog
-        open={!!deleteTarget}
-        onOpenChange={() => setDeleteTarget(null)}
+        open={pendingUpdate !== null}
+        onOpenChange={(open) => !open && setPendingUpdate(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Laporan?</AlertDialogTitle>
+            <AlertDialogTitle>Konfirmasi Perubahan Status</AlertDialogTitle>
             <AlertDialogDescription>
-              Laporan dengan ID{" "}
-              <span className="font-mono font-semibold">{deleteTarget}</span>{" "}
-              akan dihapus dari sistem. Tindakan ini tidak dapat dibatalkan.
+              Apakah kamu yakin ingin mengubah status pengaduan ini menjadi{" "}
+              <strong>{pendingUpdate?.status}</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
+              onClick={() => {
+                if (pendingUpdate) {
+                  handleUpdateStatus(pendingUpdate.id, pendingUpdate.status);
+                  setPendingUpdate(null); // Reset setelah sukses
+                }
+              }}
             >
-              Hapus
+              Yakin
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
