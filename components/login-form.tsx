@@ -8,6 +8,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export function LoginForm({
   className,
@@ -41,7 +42,7 @@ export function LoginForm({
         <div className="flex flex-col items-center gap-1 text-center">
           <div className="flex justify-center gap-2 mb-4">
             <Image
-              src="/placeholder.svg"
+              src="/logo-laporsmkdark.svg"
               alt="img-laporsmk"
               width={200}
               height={200}
@@ -86,6 +87,12 @@ export function LoginForm({
           </Button>
         </Field>
       </FieldGroup>
+      <p>
+        Tidak punya akun?{" "}
+        <Link className="underline" href="">
+          Register disini
+        </Link>
+      </p>
     </form>
   );
 }

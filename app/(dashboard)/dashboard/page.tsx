@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -87,7 +88,7 @@ export default function DashboardPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-100 text-amber-700 border-amber-300"
+            className="bg-amber-100 text-amber-800 border font-semibold text-base px-4 py-4"
           >
             Pending
           </Badge>
@@ -96,7 +97,7 @@ export default function DashboardPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-purple-100 text-purple-700 border-purple-300"
+            className="bg-purple-100 text-purple-700 border-purple-300 font-semibold text-base px-4 py-4"
           >
             Proses
           </Badge>
@@ -105,7 +106,7 @@ export default function DashboardPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-100 text-emerald-700 border-emerald-300"
+            className="bg-emerald-100 text-emerald-700 border-emerald-300 font-semibold text-base px-4 py-4"
           >
             Selesai
           </Badge>
@@ -123,19 +124,14 @@ export default function DashboardPage() {
         ]}
       />
       <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
-        {/* 1. Ringkasan Kartu Statistik */}
         <SectionCards />
-
-        {/* 2. CHART AREA: Muncul di sini JIKA yang login adalah Admin */}
         {isAdmin && (
           <div className="animate-in fade-in duration-300">
             <ChartAreaInteractive />
           </div>
         )}
-
-        {/* 4. Tabel Standar Shadcn UI */}
         <div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-          <div className="p-5">
+          <div className="p-5 flex justify-between">
             <Input
               placeholder="Cari judul laporan..."
               value={search}
@@ -145,16 +141,21 @@ export default function DashboardPage() {
               }}
               className="max-w-sm"
             />
+            <Link href="pengaduan">
+              <Button className="hidden md:flex h-10 border border-primary text-primary cursor-pointer bg-accent font-semibold text-base px-6">
+                Lihat Detail
+              </Button>
+            </Link>
           </div>
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-muted/40 border">
               <TableRow>
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>Judul Laporan</TableHead>
                 {isAdmin && <TableHead>Pelapor</TableHead>}
                 <TableHead>Kategori</TableHead>
                 <TableHead>Tanggal Kejadian</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -195,7 +196,7 @@ export default function DashboardPage() {
                     <TableCell>
                       {new Date(p.tgl_kejadian).toLocaleDateString("id-ID")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       {getStatusBadge(p.status)}
                     </TableCell>
                   </TableRow>
@@ -204,7 +205,6 @@ export default function DashboardPage() {
             </TableBody>
           </Table>
         </div>
-
         <div className="flex items-center justify-end space-x-2">
           <Button
             variant="outline"

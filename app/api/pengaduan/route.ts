@@ -33,10 +33,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      whereClause.judul_laporan = { contains: search };
+      whereClause.OR = [
+        {
+          judul_laporan: {
+            contains: search,
+          },
+        },
+        {
+          kategori: {
+            nama_kategori: {
+              contains: search,
+            },
+          },
+        },
+      ];
     }
 
-    // Ambil data array list
     const pengaduans = await prisma.pengaduan.findMany({
       where: whereClause,
       include: {

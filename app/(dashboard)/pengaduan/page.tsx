@@ -302,8 +302,6 @@ export default function PengaduanPage() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────────
-
   return (
     <div className="">
       {/* Header */}
@@ -321,9 +319,11 @@ export default function PengaduanPage() {
                 : "Buat dan pantau laporan pengaduanmu"}
             </p>
           </div>
-
           {!isAdmin && (
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button
+              className="hidden md:flex h-12 text-primary-foreground cursor-pointer bg-primary hover:bg-primary/90 font-semibold text-base px-6"
+              onClick={() => setCreateOpen(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Buat Laporan
             </Button>
@@ -331,17 +331,15 @@ export default function PengaduanPage() {
         </div>
 
         {/* Search (admin only) */}
-        {isAdmin && (
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Cari judul laporan..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        )}
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Cari judul laporan..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
         {isAdmin && (
           <div className="hidden md:block w-full overflow-hidden rounded-xl border">
@@ -455,7 +453,6 @@ export default function PengaduanPage() {
           </div>
         )}
 
-        {/* ── SISWA: Card list laporan milik sendiri ── */}
         {!isAdmin && (
           <div className="space-y-3">
             {loading ? (
@@ -473,42 +470,89 @@ export default function PengaduanPage() {
                 </CardContent>
               </Card>
             ) : (
-              pengaduans.map((p) => (
-                <Card key={p.id_pengaduan}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base font-semibold leading-snug">
-                        {p.judul_laporan}
-                      </CardTitle>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${statusColor(p.status)}`}
-                      >
-                        {p.status}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground space-y-1">
-                    <p>
-                      <span className="font-medium text-foreground">
-                        Kategori:
-                      </span>{" "}
-                      {p.kategori.nama_kategori}
-                    </p>
-                    <p>
-                      <span className="font-medium text-foreground">
-                        Tgl Kejadian:
-                      </span>{" "}
-                      {formatDate(p.tgl_kejadian)}
-                    </p>
-                    <p className="line-clamp-2 pt-1">{p.isi_laporan}</p>
-                  </CardContent>
-                </Card>
-              ))
+              // data pengaduan siswa
+              <div className="hidden md:block w-full overflow-hidden rounded-xl border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-4 w-70">ID Pengaduan</TableHead>
+                      <TableHead className="w-70">Pelapor</TableHead>
+                      <TableHead className="w-90">Judul</TableHead>
+                      <TableHead className="w-90">Kategori</TableHead>
+                      <TableHead className="w-90">Tgl Kejadian</TableHead>
+                      <TableHead className="w-100">Deskripsi</TableHead>
+                      <TableHead className="w-60">Status</TableHead>
+                      <TableHead className="text-center">
+                        Lihat Detail
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-12">
+                          <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    ) : pengaduans.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-12 text-muted-foreground"
+                        >
+                          <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                          Tidak ada data pengaduan
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      pengaduans.map((p) => (
+                        <TableRow key={p.id_pengaduan}>
+                          <TableCell className="font-semibold text-base">
+                            {p.id_pengaduan}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium text-base">
+                              {p.user.nama_lengkap}
+                            </div>
+                            <div className="text-muted-foreground text-sm">
+                              {p.user.nis_nip}
+                            </div>
+                          </TableCell>
+                          <TableCell className="truncate font-medium text-base">
+                            {p.judul_laporan}
+                          </TableCell>
+                          <TableCell className="text-base">
+                            {p.kategori.nama_kategori}
+                          </TableCell>
+                          <TableCell className="text-base">
+                            {formatDate(p.tgl_kejadian)}
+                          </TableCell>
+                          <TableCell className="truncate font-medium text-base">
+                            {p.isi_laporan}
+                          </TableCell>
+                          <TableCell>{p.status}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-4">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setDetailModal(p)}
+                              >
+                                <Info className="size-6" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
         )}
 
-        {/* ── Modal: Detail Pengaduan (Admin) ── */}
         <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
           <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh]">
             <DialogHeader>
@@ -519,14 +563,15 @@ export default function PengaduanPage() {
             </DialogHeader>
             {detailModal && (
               <div className="space-y-6 text-base justify-center">
-                <div className="w-full">
+                <div className="relative w-full max-w-2xl h-[250px] md:h-[400px] rounded-xl overflow-hidden border bg-muted">
                   <Image
                     src={detailModal.foto}
-                    className="w-full rounded-xl"
-                    width={100}
-                    height={100}
                     alt="Detailed-Foto"
-                  ></Image>
+                    fill
+                    sizes="(max-width: 768px) 100vw, 42rem"
+                    className="object-cover object-center"
+                    priority
+                  />
                 </div>
                 <div className="grid grid-cols-3 gap-5">
                   <div>

@@ -29,7 +29,7 @@ export function SectionCards() {
       });
   }, []);
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-2 px-4 lg:px-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-2">
       {/* Card 1: Total Pelaporan */}
       <Card className="flex flex-col justify-between border-accent/60 shadow-xs">
         <CardHeader className="space-y-3 pb-2">

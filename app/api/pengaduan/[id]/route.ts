@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { PengaduanStatus } from "@prisma/client";
 
 interface ApiResponse {
   success: boolean;
   message?: string;
   error?: string;
 }
+
+type PengaduanStatus = "Pending" | "Proses" | "Selesai";
 
 export async function PUT(
   request: NextRequest,
@@ -50,6 +51,30 @@ export async function PUT(
         },
         { status: 404 },
       );
+    }
+
+    if (existingPengaduan.status !== status) {
+      const lastLog = await prisma.logStatusPengaduan.findFirst({
+        orderBy: { id_log: "desc" },
+        select: { id_log: true },
+      });
+
+      let nextId = "LOG0000001";
+      if (lastLog) {
+        const lastNumber = parseInt(lastLog.id_log.replace("LOG", ""), 10);
+        const nextNumberString = String(lastNumber + 1).padStart(7, "0");
+        nextId = `LOG${nextNumberString}`;
+      }
+
+      await prisma.logStatusPengaduan.create({
+        data: {
+          id_log: nextId,
+          id_pengaduan: id,
+          status_lama: existingPengaduan.status,
+          status_baru: status,
+          tgl_perubahan: new Date(),
+        },
+      });
     }
 
     await prisma.pengaduan.update({
