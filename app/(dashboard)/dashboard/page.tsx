@@ -1,17 +1,37 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  type Transaction,
-  type Pagination,
-  type TransactionFilters,
-} from "@/components/data-table";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
-import { TriangleAlertIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
+interface Pengaduan {
+  id_pengaduan: string;
+  judul_laporan: string;
+  isi_laporan: string;
+  tgl_kejadian: string;
+  status: string;
+  user?: {
+    nama_lengkap: string;
+  };
+  kategori?: {
+    nama_kategori: string;
+  };
+}
+
+// Load chart secara dinamis agar aman dari masalah SSR
 const ChartAreaInteractive = dynamic(
   () =>
     import("@/components/chart-area-interactive").then(
@@ -25,183 +45,184 @@ const ChartAreaInteractive = dynamic(
   },
 );
 
-const TransactionDataTable = dynamic(
-  () => import("@/components/data-table").then((m) => m.TransactionDataTable),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[400px] rounded-xl bg-muted/30 animate-pulse" />
-    ),
-  },
-);
-interface SummaryStats {
-  dailyRevenue: number;
-  dailyTrend: number;
-  monthlyRevenue: number;
-  totalRevenue: number;
-  topProduct: string;
-  topProductQty: number;
-}
-
-interface LowStockProduct {
-  id: number;
-  name: string;
-  stock: number;
-}
-
 export default function DashboardPage() {
-  const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([]);
-  const [stats, setStats] = useState<SummaryStats>({
-    dailyRevenue: 0,
-    dailyTrend: 0,
-    monthlyRevenue: 0,
-    totalRevenue: 0,
-    topProduct: "Memuat...",
-    topProductQty: 0,
-  });
-
-  const [data, setData] = useState<Transaction[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    total: 0,
-    page: 1,
-    limit: 10,
-    pages: 1,
-  });
-  const [filters, setFilters] = useState<TransactionFilters>({
-    kasir: "",
-    dateStart: "",
-    dateEnd: "",
-  });
+  const { data: session } = useSession();
+  const [pengaduans, setPengaduans] = useState<Pengaduan[]>([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // ── Low stock ──
+  const limit = 10;
+  const isAdmin = session?.user?.role === "admin";
+
   useEffect(() => {
-    let isMounted = true;
-    fetch("/api/low-stock")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && isMounted) setLowStockItems(json.data);
-      })
-      .catch((err) => console.error("Gagal memuat low stock:", err));
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // ── Stats awal (sekali load) ──
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/transactions?page=1&limit=1");
-        const json = await res.json();
-        if (json.success && json.stats) setStats(json.stats);
-      } catch (error) {
-        console.error("Gagal memuat statistik:", error);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  // ── Fetch transaksi ──
-  const fetchTransactions = useCallback(
-    async (page: number, limit: number, f: TransactionFilters) => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const params = new URLSearchParams();
-        params.append("page", page.toString());
-        params.append("limit", limit.toString());
-        if (f.kasir) params.append("kasir", f.kasir);
-        if (f.dateStart) params.append("dateStart", f.dateStart);
-        if (f.dateEnd) params.append("dateEnd", f.dateEnd);
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          ...(search && { search }),
+        });
 
-        const res = await fetch(`/api/transactions?${params.toString()}`);
+        const res = await fetch(`/api/pengaduan?${params.toString()}`);
         const json = await res.json();
 
-        if (json.success) {
-          setData(json.data);
-          setPagination({
-            total: json.pagination.total,
-            page: json.pagination.page,
-            limit: json.pagination.limit,
-            pages: json.pagination.pages,
-          });
-          if (json.stats) setStats(json.stats);
+        if (json.success && Array.isArray(json.data)) {
+          setPengaduans(json.data);
         }
-      } catch (error) {
-        console.error("Fetch error:", error);
+      } catch (err) {
+        console.error("Gagal fetch data aduan:", err);
       } finally {
         setLoading(false);
       }
-    },
-    [],
-  );
-
-  // ── Trigger fetch setiap page, limit, atau filter berubah ──
-  useEffect(() => {
-    const triggerFetch = async () => {
-      await fetchTransactions(pagination.page, pagination.limit, filters);
     };
-    triggerFetch();
-  }, [pagination.page, pagination.limit, filters, fetchTransactions]);
 
-  function handleFilterChange(newFilters: TransactionFilters) {
-    setFilters(newFilters);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }
+    loadData();
+  }, [page, search]);
 
-  function handlePageChange(page: number) {
-    setPagination((prev) => ({ ...prev, page }));
-  }
-
-  function handlePageSizeChange(limit: number) {
-    setPagination((prev) => ({ ...prev, limit, page: 1 }));
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-amber-100 text-amber-700 border-amber-300"
+          >
+            Pending
+          </Badge>
+        );
+      case "Proses":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-700 border-purple-300"
+          >
+            Proses
+          </Badge>
+        );
+      case "Selesai":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-emerald-100 text-emerald-700 border-emerald-300"
+          >
+            Selesai
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   return (
     <>
-      <SiteHeader header={[{ title: "Dashboard" }]} />
-      <div className="flex flex-1 flex-col min-h-0">
-        <div className="px-7">
-          {lowStockItems.length > 0 && (
-            <Alert
-              variant="destructive"
-              className="border-amber-600 bg-amber-100 text-amber-900 shadow-sm animate-in fade-in-50 duration-300"
-            >
-              <TriangleAlertIcon className="size-5 text-amber-600" />
-              <div className="ml-2">
-                <AlertTitle className="text-base font-bold">
-                  Peringatan: Stok Produk Menipis!
-                </AlertTitle>
-                <AlertDescription className="text-sm text-amber-800/90 mt-0.5">
-                  Beberapa produk berikut sudah berada di bawah batas minimum:{" "}
-                  <span className="font-semibold underline decoration-amber-500/50">
-                    {lowStockItems
-                      .map((item) => `${item.name} (Sisa ${item.stock} Pcs)`)
-                      .join(", ")}
-                  </span>
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
-        </div>
+      <SiteHeader
+        header={[
+          { title: isAdmin ? "Dashboard Admin" : "Pendataan Pelaporan" },
+        ]}
+      />
+      <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+        {/* 1. Ringkasan Kartu Statistik */}
+        <SectionCards />
 
-        <div className="@container/main flex flex-1 flex-col gap-2">
-          <div className="flex flex-col gap-4 py-4 px-0 md:gap-6 md:py-6">
-            <SectionCards />
-            <div className="px-4 lg:px-6">
-              <ChartAreaInteractive />
-            </div>
-            <TransactionDataTable
-              data={data}
-              pagination={pagination}
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              isLoading={loading}
+        {/* 2. CHART AREA: Muncul di sini JIKA yang login adalah Admin */}
+        {isAdmin && (
+          <div className="animate-in fade-in duration-300">
+            <ChartAreaInteractive />
+          </div>
+        )}
+
+        {/* 4. Tabel Standar Shadcn UI */}
+        <div className="rounded-xl border bg-card shadow-xs overflow-hidden">
+          <div className="p-5">
+            <Input
+              placeholder="Cari judul laporan..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="max-w-sm"
             />
           </div>
+          <Table>
+            <TableHeader className="bg-muted/40">
+              <TableRow>
+                <TableHead className="w-[100px]">ID</TableHead>
+                <TableHead>Judul Laporan</TableHead>
+                {isAdmin && <TableHead>Pelapor</TableHead>}
+                <TableHead>Kategori</TableHead>
+                <TableHead>Tanggal Kejadian</TableHead>
+                <TableHead className="text-right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 6 : 5}
+                    className="h-24 text-center text-muted-foreground animate-pulse"
+                  >
+                    Memuat data pengaduan...
+                  </TableCell>
+                </TableRow>
+              ) : pengaduans.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 6 : 5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    Tidak ada data pengaduan ditemukan.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pengaduans.map((p) => (
+                  <TableRow
+                    key={p.id_pengaduan}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    <TableCell className="font-semibold">
+                      {p.id_pengaduan}
+                    </TableCell>
+                    <TableCell className="font-medium max-w-[200px] truncate">
+                      {p.judul_laporan}
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell>{p.user?.nama_lengkap || "-"}</TableCell>
+                    )}
+                    <TableCell>{p.kategori?.nama_kategori || "-"}</TableCell>
+                    <TableCell>
+                      {new Date(p.tgl_kejadian).toLocaleDateString("id-ID")}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {getStatusBadge(p.status)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            disabled={page === 1 || loading}
+          >
+            Sebelumnya
+          </Button>
+          <div className="text-sm font-medium">Halaman {page}</div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={pengaduans.length < limit || loading}
+          >
+            Selanjutnya
+          </Button>
         </div>
       </div>
     </>
