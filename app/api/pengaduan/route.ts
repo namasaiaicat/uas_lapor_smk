@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       );
       const nextNumber = lastNumber + 1;
 
-      nextId = `KTG${String(nextNumber).padStart(6, "0")}`;
+      nextId = `PGD${String(nextNumber).padStart(6, "0")}`;
     }
 
     const newPengaduan = await prisma.pengaduan.create({

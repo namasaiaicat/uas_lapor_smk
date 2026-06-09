@@ -30,6 +30,14 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react"; // Untuk ikon di tombol pemantik
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -495,7 +503,7 @@ export default function PengaduanPage() {
                   <p className="text-xs text-muted-foreground mb-0.5">
                     ID Pengaduan
                   </p>
-                  <p className="font-mono font-medium">
+                  <p className="font-mono font-medium truncate">
                     {detailModal.id_pengaduan}
                   </p>
                 </div>
@@ -617,21 +625,75 @@ export default function PengaduanPage() {
               {/* Tanggal Kejadian */}
               <Field>
                 <Label htmlFor="tgl-add">Tanggal Kejadian</Label>
-                <Input
-                  id="tgl-add"
-                  type="date"
-                  value={form.tgl_kejadian}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      tgl_kejadian: e.target.value,
-                    }))
-                  }
-                  className="sm:h-12 h-10 text-base"
-                />
+                <div className="mt-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="tgl-add"
+                        variant="outline"
+                        className={`w-full sm:h-12 h-10 px-3 text-left font-normal text-base justify-start gap-2 rounded-xl border-2 ${
+                          !form.tgl_kejadian && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="size-5 text-muted-foreground shrink-0" />
+                        {form.tgl_kejadian ? (
+                          new Date(form.tgl_kejadian).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
+                        ) : (
+                          <span>Pilih tanggal kejadian</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0 rounded-xl shadow-lg border"
+                      align="start"
+                    >
+                      <div className="flex flex-col">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            form.tgl_kejadian
+                              ? new Date(form.tgl_kejadian)
+                              : undefined
+                          }
+                          onSelect={(date) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              tgl_kejadian: date
+                                ? format(date, "yyyy-MM-dd")
+                                : "",
+                            }))
+                          }
+                        />
+                        {form.tgl_kejadian && (
+                          <div className="p-2 border-t bg-muted/20">
+                            <Button
+                              type="button"
+                              className="w-full h-9 text-sm rounded-lg"
+                              variant="ghost"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  tgl_kejadian: "",
+                                }))
+                              }
+                            >
+                              Hapus Tanggal
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </Field>
 
-              {/* Judul Laporan */}
               <Field>
                 <Label htmlFor="judul-add">Judul Laporan</Label>
                 <Input
@@ -664,37 +726,93 @@ export default function PengaduanPage() {
                   className="min-h-[120px] text-base p-3"
                 />
               </Field>
-
               <Field>
                 <Label htmlFor="foto-add">Foto Bukti Laporan (Opsional)</Label>
-                <div className="space-y-3">
-                  <Input
-                    id="foto-add"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="sm:h-12 h-10 pt-2 text-base cursor-pointer"
-                  />
-
-                  {form.foto && (
-                    <div className="relative mt-2 max-w-xs overflow-hidden rounded-lg border bg-muted">
-                      <Image
-                        src={form.foto}
-                        alt="Preview Bukti"
-                        className="h-auto w-full max-h-40 object-cover"
-                      />
+                <div className="mt-2">
+                  {form.foto ? (
+                    <div className="">
                       <Button
                         type="button"
-                        variant="destructive"
+                        variant="default"
                         size="sm"
-                        className="absolute top-2 right-2 h-8 px-2 text-xs"
+                        className="h-10 px-5 rounded-lg mb-2 text-sm sm:text-base font-medium shadow-md cursor-pointer hover:bg-red-600"
                         onClick={() =>
                           setForm((prev) => ({ ...prev, foto: "" }))
                         }
                       >
                         Hapus Foto
                       </Button>
+                      <div className="relative overflow-hidden rounded-xl border bg-muted shadow-sm">
+                        <Image
+                          src={form.foto}
+                          alt="Preview Bukti Laporan"
+                          className="h-auto w-full max-h-90 object-cover"
+                          width={100}
+                          height={100}
+                        />
+                      </div>
                     </div>
+                  ) : (
+                    <label
+                      htmlFor="foto-add"
+                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer bg-background hover:bg-muted/50 border-muted-foreground/20 transition-colors p-4 text-center"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg
+                          className="w-8 h-8 mb-3 text-muted-foreground"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 20 16"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                          />
+                        </svg>
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          <span className="font-semibold">
+                            Klik untuk unggah
+                          </span>{" "}
+                          atau seret gambar ke sini
+                        </p>
+                        <p className="text-xs text-muted-foreground/70">
+                          PNG, JPG, atau WEBP (Maks. 2MB)
+                        </p>
+                      </div>
+                      <input
+                        id="foto-add"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          // Validasi Ukuran File (2MB)
+                          if (file.size > 2 * 1024 * 1024) {
+                            toast.error(
+                              "Ukuran gambar terlalu besar! Maksimal 2MB.",
+                            );
+                            e.target.value = "";
+                            return;
+                          }
+
+                          // Mengubah file ke base64 string murni
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setForm((prev) => ({
+                              ...prev,
+                              foto: reader.result as string,
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
                   )}
                 </div>
               </Field>

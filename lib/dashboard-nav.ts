@@ -8,7 +8,7 @@ export function getDashboardNavItems(
 ): DashboardNavItem[] {
   const items: DashboardNavItem[] = [];
 
-  if (role === "admin" || role === "owner" || role === "kasir" || !role) {
+  if (role === "admin" || role === "siswa" || !role) {
     items.push({ title: "Dashboard", url: "/dashboard" });
   }
 
@@ -21,8 +21,8 @@ export function getDashboardNavItems(
     );
   }
 
-  if (role === "owner") {
-    items.push({ title: "Laporan", url: "/laporan" });
+  if (role === "siswa") {
+    items.push({ title: "Pengaduan", url: "/pengaduan" });
   }
 
   return items;
