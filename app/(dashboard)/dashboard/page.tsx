@@ -142,7 +142,7 @@ export default function DashboardPage() {
               className="max-w-sm"
             />
             <Link href="pengaduan">
-              <Button className="hidden md:flex h-10 border border-primary text-primary cursor-pointer bg-accent font-semibold text-base px-6">
+              <Button className="hidden md:flex h-10 border text-primary cursor-pointer bg-accent font-semibold text-base px-6">
                 Lihat Detail
               </Button>
             </Link>

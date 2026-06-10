@@ -61,6 +61,7 @@ interface User {
   nama_lengkap: string;
   username: string;
   role: string;
+  is_active: number;
 }
 
 interface FormData {
@@ -71,6 +72,11 @@ interface FormData {
   role: string;
 }
 
+const STATUS_OPTIONS = [
+  { label: "Aktif", value: "1" },
+  { label: "Nonaktif", value: "0" },
+];
+
 export default function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +86,10 @@ export default function UserPage() {
   const limit = 10;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nama_lengkap: "",
     nis_nip: "",
@@ -114,9 +123,29 @@ export default function UserPage() {
     const delayDebounceFn = setTimeout(() => {
       fetchUsers(currentPage, searchQuery);
     }, 300);
-
     return () => clearTimeout(delayDebounceFn);
   }, [currentPage, searchQuery]);
+
+  const handleStatusChange = async (userId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/user/${userId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: parseInt(newStatus) }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message || "Status user berhasil diperbarui");
+        fetchUsers(currentPage);
+      } else {
+        toast.error(json.message || "Gagal memperbarui status");
+      }
+    } catch (error) {
+      console.error("Status update error:", error);
+      toast.error("Terjadi kesalahan jaringan");
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -183,13 +212,12 @@ export default function UserPage() {
     }
   };
 
-  // PERBAIKAN: Memperbaiki typo objek bersarang dan pencocokan field
   const handleEdit = (user: User) => {
     setFormData({
       nama_lengkap: user.nama_lengkap,
       nis_nip: user.nis_nip,
       username: user.username,
-      password: "", // Kosongkan password saat edit kecuali ingin diganti baru
+      password: "",
       role: user.role,
     });
     setEditingId(user.id_user);
@@ -462,6 +490,7 @@ export default function UserPage() {
                   <TableHead>NIS / NIP</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Roles</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -475,10 +504,33 @@ export default function UserPage() {
                       {user.nama_lengkap}
                     </TableCell>
                     <TableCell>{user.nis_nip}</TableCell>
-                    <TableCell>@{user.username}</TableCell>
+                    <TableCell>{user.username}</TableCell>
                     <TableCell className="capitalize">{user.role}</TableCell>
                     <TableCell>
-                      <div className="flex justify-center items-center gap-4">
+                      <Select
+                        value={String(user.is_active)}
+                        onValueChange={(val) =>
+                          handleStatusChange(user.id_user, val)
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-base w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map((s) => (
+                            <SelectItem
+                              key={s.value}
+                              value={s.value}
+                              className="text-base"
+                            >
+                              {s.label}{" "}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-4">
                         <Button
                           variant="ghost"
                           onClick={() => handleEdit(user)}

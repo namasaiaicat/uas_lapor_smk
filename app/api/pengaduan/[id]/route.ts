@@ -29,8 +29,11 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = (await request.json()) as { status?: string };
-    const { status } = body;
+    const body = (await request.json()) as {
+      status?: string;
+      feedback_admin?: string;
+    };
+    const { status, feedback_admin } = body;
 
     if (!status) {
       return NextResponse.json<ApiResponse>(
@@ -81,6 +84,7 @@ export async function PUT(
       where: { id_pengaduan: id },
       data: {
         status: status as PengaduanStatus,
+        ...(feedback_admin !== undefined && { feedback_admin }),
       },
     });
 
@@ -101,7 +105,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -129,14 +133,106 @@ export async function DELETE(
 
     return NextResponse.json<ApiResponse>({
       success: true,
-      message: "Laporan pengaduan berhasil dihapus dari sistem!",
+      message: "Laporan pengaduan berhasil dinonaktifkan (Soft Delete)!",
+    });
+  } catch (error) {
+    console.error("Prisma PATCH Soft Delete Error:", error);
+    return NextResponse.json<ApiResponse>(
+      {
+        success: false,
+        message: "Gagal menghapus laporan pengaduan via PATCH",
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json<ApiResponse>(
+        {
+          success: false,
+          message:
+            "Akses ditolak. Hanya Admin yang dapat menghapus permanen laporan!",
+        },
+        { status: 403 },
+      );
+    }
+
+    const { id } = await params;
+
+    await prisma.pengaduan.delete({
+      where: { id_pengaduan: id },
+    });
+
+    return NextResponse.json<ApiResponse>({
+      success: true,
+      message: "Laporan pengaduan berhasil dihapus permanen dari database!",
     });
   } catch (error) {
     console.error("Prisma Delete Pengaduan Error:", error);
     return NextResponse.json<ApiResponse>(
       {
         success: false,
-        message: "Gagal menghapus laporan pengaduan",
+        message: "Gagal menghapus permanen laporan pengaduan",
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json<ApiResponse>(
+        {
+          success: false,
+          message: "Akses ditolak. Hanya Admin yang dapat memulihkan laporan!",
+        },
+        { status: 403 },
+      );
+    }
+
+    const { id } = await params;
+
+    const existing = await prisma.pengaduan.findFirst({
+      where: { id_pengaduan: id, is_deleted: 1 },
+    });
+
+    if (!existing) {
+      return NextResponse.json<ApiResponse>(
+        { success: false, message: "Laporan tidak ditemukan di recycle bin." },
+        { status: 404 },
+      );
+    }
+
+    await prisma.pengaduan.update({
+      where: { id_pengaduan: id },
+      data: { is_deleted: 0 },
+    });
+
+    return NextResponse.json<ApiResponse>({
+      success: true,
+      message: "Laporan berhasil dipulihkan!",
+    });
+  } catch (error) {
+    return NextResponse.json<ApiResponse>(
+      {
+        success: false,
+        message: "Gagal memulihkan laporan",
         error: error instanceof Error ? error.message : "Internal Server Error",
       },
       { status: 500 },

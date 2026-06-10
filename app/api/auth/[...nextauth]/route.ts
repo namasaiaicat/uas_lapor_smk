@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
+        username: { label: "Username / NIP / NIS", type: "text" },
         password: { label: "Password", type: "password" },
       },
 
@@ -43,7 +43,13 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) return null;
 
         const user = await prisma.users.findFirst({
-          where: { username: credentials.username },
+          where: {
+            is_deleted: 0,
+            OR: [
+              { username: credentials.username },
+              { nis_nip: credentials.username },
+            ],
+          },
         });
 
         if (!user) return null;
@@ -54,6 +60,12 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) return null;
+
+        if (user.is_active !== 1) {
+          throw new Error(
+            "Akun Anda belum aktif. Silakan hubungi Admin untuk konfirmasi.",
+          );
+        }
 
         return {
           id: String(user.id_user),

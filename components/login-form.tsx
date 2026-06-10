@@ -27,7 +27,7 @@ export function LoginForm({
     });
 
     if (result?.error) {
-      toast.error("Username atau Password Salah!");
+      toast.error("Kredensial yang anda masukkan Salah!");
     } else {
       router.push("/dashboard");
     }
@@ -55,7 +55,7 @@ export function LoginForm({
           </p>
         </div>
         <Field>
-          <FieldLabel htmlFor="username">Username</FieldLabel>
+          <FieldLabel htmlFor="username">Username / NIS / NIP</FieldLabel>
           <Input
             id="username"
             name="username"
@@ -90,7 +90,7 @@ export function LoginForm({
       <p>
         Tidak punya akun?{" "}
         <Link className="underline" href="">
-          Register disini
+          Silahkan Hubungi Pihak Sekolah untuk Aktivasi
         </Link>
       </p>
     </form>

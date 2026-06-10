@@ -81,8 +81,6 @@ interface Kategori {
   nama_kategori: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const STATUS_OPTIONS: PengaduanStatus[] = [
   "Pending",
   "Proses",
@@ -284,7 +282,7 @@ export default function PengaduanPage() {
     if (!deleteTarget) return;
     try {
       const res = await fetch(`/api/pengaduan/${deleteTarget}`, {
-        method: "DELETE",
+        method: "PATCH",
       });
       const json = await res.json();
       if (json.success) {

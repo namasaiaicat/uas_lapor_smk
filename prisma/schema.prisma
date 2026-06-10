@@ -52,6 +52,7 @@ model Pengaduan {
   id_kategori   String          @db.Char(5)
   judul_laporan String          @db.VarChar(30)
   isi_laporan   String          @db.Text
+  feedback_admin   String?          @db.Text
   foto          String?         @db.LongText
   status        PengaduanStatus @default(Pending)
   is_deleted    Int             @default(0) @db.TinyInt

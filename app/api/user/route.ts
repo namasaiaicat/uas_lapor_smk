@@ -62,7 +62,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    // Ini akan memunculkan detail eror aslinya di terminal VS Code kamu
     console.error("Prisma GET Error Detail:", error);
 
     return NextResponse.json(
@@ -79,9 +78,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { nama_lengkap, nis_nip, username, password, role } = body;
+    const { nama_lengkap, nis_nip, username, password } = body;
 
-    if (!username || !password || !nama_lengkap || !nis_nip || !role) {
+    if (!username || !password || !nama_lengkap || !nis_nip) {
       return NextResponse.json<ApiResponse>(
         {
           success: false,
@@ -109,7 +108,8 @@ export async function POST(request: NextRequest) {
         nama_lengkap,
         username,
         password: hashedPassword,
-        role: role as UserRole,
+        role: "siswa",
+        is_active: 0,
       },
     });
 
