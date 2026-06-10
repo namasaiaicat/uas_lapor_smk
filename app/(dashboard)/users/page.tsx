@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { Edit, PlusIcon, User as UserIcon } from "lucide-react";
+import { Edit, Forward, PlusIcon, User as UserIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -54,6 +54,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download } from "lucide-react";
 
 interface User {
   id_user: string;
@@ -62,6 +65,7 @@ interface User {
   username: string;
   role: string;
   is_active: number;
+  no_telp: string; // <-- Ditambahkan di tipe User utama
 }
 
 interface FormData {
@@ -70,6 +74,7 @@ interface FormData {
   username: string;
   password?: string;
   role: string;
+  no_telp: string; // <-- Ditambahkan di interface state Form
 }
 
 const STATUS_OPTIONS = [
@@ -86,16 +91,13 @@ export default function UserPage() {
   const limit = 10;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [pendingUpdate, setPendingUpdate] = useState<{
-    id: string;
-    status: string;
-  } | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nama_lengkap: "",
     nis_nip: "",
     username: "",
     password: "",
-    role: "siswa", // Default diubah ke siswa atau sesuai kebutuhan
+    role: "siswa",
+    no_telp: "", // <-- Inisialisasi awal string kosong
   });
 
   const fetchUsers = async (page = 1, search = "") => {
@@ -162,6 +164,59 @@ export default function UserPage() {
     }));
   };
 
+  const handleExportPDF = async () => {
+    // Ambil semua data tanpa pagination
+    try {
+      const res = await fetch(
+        `/api/user?page=1&limit=9999&search=${encodeURIComponent(searchQuery)}`,
+      );
+      const json = await res.json();
+
+      if (!json.success)
+        return toast.error("Gagal mengambil data untuk export");
+
+      const allUsers: User[] = json.data;
+
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text("Daftar User", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Dicetak: ${new Date().toLocaleDateString("id-ID")}`, 14, 22);
+
+      autoTable(doc, {
+        startY: 28,
+        head: [
+          [
+            "ID User",
+            "Nama Lengkap",
+            "NIS/NIP",
+            "No. Telepon",
+            "Username",
+            "Role",
+            "Status",
+          ],
+        ],
+        body: allUsers.map((u) => [
+          u.id_user,
+          u.nama_lengkap,
+          u.nis_nip,
+          u.no_telp || "-",
+          u.username,
+          u.role,
+          u.is_active === 1 ? "Aktif" : "Nonaktif",
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [41, 128, 185] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      doc.save(`daftar-user-${Date.now()}.pdf`);
+    } catch {
+      toast.error("Gagal export PDF");
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nama_lengkap: "",
@@ -169,8 +224,21 @@ export default function UserPage() {
       username: "",
       password: "",
       role: "siswa",
+      no_telp: "",
     });
     setEditingId(null);
+  };
+
+  const formatWhatsAppNumber = (phone: string) => {
+    let cleaned = phone.replace(/\D/g, "");
+    if (cleaned.startsWith("0")) {
+      cleaned = "62" + cleaned.substring(1);
+    }
+    if (cleaned.startsWith("8")) {
+      cleaned = "62" + cleaned;
+    }
+
+    return cleaned;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,9 +248,10 @@ export default function UserPage() {
       !formData.nama_lengkap ||
       !formData.nis_nip ||
       !formData.username ||
-      !formData.role
+      !formData.role ||
+      !formData.no_telp
     ) {
-      toast.error("Field wajib diisi");
+      toast.error("Semua field termasuk No. Telepon wajib diisi!");
       return;
     }
 
@@ -219,6 +288,7 @@ export default function UserPage() {
       username: user.username,
       password: "",
       role: user.role,
+      no_telp: user.no_telp || "",
     });
     setEditingId(user.id_user);
     setIsDialogOpen(true);
@@ -314,6 +384,21 @@ export default function UserPage() {
                       className="sm:h-12 h-10"
                     />
                   </Field>
+
+                  {/* FIELD TERBARU: No Telepon Wajib Diisi */}
+                  <Field>
+                    <Label htmlFor="no-telp-add">No. Telepon</Label>
+                    <Input
+                      id="no-telp-add"
+                      name="no_telp"
+                      type="tel"
+                      placeholder="Contoh: 08123456789"
+                      value={formData.no_telp}
+                      onChange={handleInputChange}
+                      className="sm:h-12 h-10"
+                    />
+                  </Field>
+
                   <Field>
                     <Label htmlFor="username-add">Username</Label>
                     <Input
@@ -387,16 +472,26 @@ export default function UserPage() {
             </DialogContent>
           </Dialog>
         </div>
-        <div className="mb-6 max-w-md">
-          <Input
-            type="search"
-            placeholder="Cari user..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="h-12 text-lg"
-          />
+        <div className="flex justify-between">
+          <div className="mb-6 max-w-md">
+            <Input
+              type="search"
+              placeholder="Cari user..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="h-12 text-lg"
+            />
+          </div>
+          <Button
+            variant="outline"
+            className="hidden md:flex h-10 font-semibold text-base px-6"
+            onClick={handleExportPDF}
+          >
+            <Download className="size-4 mr-2" /> Export PDF
+          </Button>
         </div>
         <div className="w-full">
+          {/* TAMPILAN KARTU UNTUK MOBILE */}
           <div className="md:hidden space-y-3">
             {loading ? (
               <p className="text-center py-10 text-muted-foreground text-lg">
@@ -412,7 +507,6 @@ export default function UserPage() {
                   key={user.id_user}
                   className="rounded-xl border bg-card p-4 flex flex-col gap-3 odd:bg-muted/30"
                 >
-                  {/* Info user */}
                   <div className="min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium text-lg truncate">
@@ -431,12 +525,15 @@ export default function UserPage() {
                     <p className="text-muted-foreground text-sm">
                       NIS/NIP: {user.nis_nip} · @{user.username}
                     </p>
+                    {/* Info Tambahan di Mobile */}
+                    <p className="text-muted-foreground text-sm">
+                      Telp: {user.no_telp || "-"}
+                    </p>
                     <p className="text-sm font-semibold text-primary mt-1 capitalize">
                       {user.role}
                     </p>
                   </div>
 
-                  {/* Select status */}
                   <Select
                     value={String(user.is_active)}
                     onValueChange={(val) =>
@@ -459,7 +556,6 @@ export default function UserPage() {
                     </SelectContent>
                   </Select>
 
-                  {/* Aksi */}
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -518,6 +614,7 @@ export default function UserPage() {
             )}
           </div>
 
+          {/* TAMPILAN TABEL UNTUK DESKTOP */}
           <div className="hidden md:block w-full overflow-hidden rounded-xl border">
             <Table>
               <TableHeader className="bg-secondary/10">
@@ -525,10 +622,11 @@ export default function UserPage() {
                   <TableHead className="pl-4">ID User</TableHead>
                   <TableHead>Nama Lengkap</TableHead>
                   <TableHead>NIS / NIP</TableHead>
+                  <TableHead>No. Telepon</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Roles</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Aksi</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -541,6 +639,7 @@ export default function UserPage() {
                       {user.nama_lengkap}
                     </TableCell>
                     <TableCell>{user.nis_nip}</TableCell>
+                    <TableCell>{user.no_telp}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell className="capitalize">{user.role}</TableCell>
                     <TableCell>
@@ -560,14 +659,31 @@ export default function UserPage() {
                               value={s.value}
                               className="text-base"
                             >
-                              {s.label}{" "}
+                              {s.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex gap-4">
+                    <TableCell className="text-center">
+                      <div className="flex gap-4 items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            const formattedPhone = formatWhatsAppNumber(
+                              user.no_telp,
+                            );
+                            const text = encodeURIComponent(
+                              `Halo *${user.nama_lengkap}*,\n\nBerikut adalah akun login Anda:\n *Username:* ${user.username}\n *Password:* ${user.nis_nip}\n\nSilakan login ke sistem. Terima kasih!`,
+                            );
+                            window.open(
+                              `https://wa.me/${formattedPhone}?text=${text}`,
+                              "_blank",
+                            );
+                          }}
+                        >
+                          <Forward className="size-5" />
+                        </Button>
                         <Button
                           variant="ghost"
                           onClick={() => handleEdit(user)}
@@ -621,6 +737,7 @@ export default function UserPage() {
               </TableBody>
             </Table>
           </div>
+
           <Pagination className="mt-4 flex-wrap gap-1">
             <PaginationContent>
               <PaginationItem>

@@ -17,7 +17,8 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { nama_lengkap, username, password, role, nis_nip } = body;
+    // 1. TAMBAHKAN no_telp DI SINI
+    const { nama_lengkap, username, password, role, nis_nip, no_telp } = body;
 
     if (!nama_lengkap || !username || !role || !nis_nip) {
       return NextResponse.json<ApiResponse>(
@@ -30,17 +31,20 @@ export async function PUT(
       );
     }
 
+    // 2. MASUKKAN no_telp KE DATA YANG AKAN DI-UPDATE
     const updateData: Prisma.UsersUpdateInput = {
       nama_lengkap,
       username,
       role: role as UserRole,
       nis_nip,
+      no_telp: no_telp || null, // Di-set null atau string kosong jika opsional
     };
 
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(password, salt);
     }
+
     const updatedUser = await prisma.users.update({
       where: { id_user: id },
       data: updateData,

@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { nama_lengkap, nis_nip, username, password } = body;
+    const { nama_lengkap, nis_nip, username, password, no_telp } = body;
 
-    if (!username || !password || !nama_lengkap || !nis_nip) {
+    if (!username || !password || !nama_lengkap || !nis_nip || !no_telp) {
       return NextResponse.json<ApiResponse>(
         {
           success: false,
@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = await prisma.users.create({
       data: {
         id_user: nextUserId,
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: "siswa",
         is_active: 0,
+        no_telp,
       },
     });
 

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,15 +8,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { EllipsisVerticalIcon, LogOutIcon, UserCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+} from "@/components/ui/sidebar";
+import {
+  EllipsisVerticalIcon,
+  LogOutIcon,
+  Settings,
+  UserCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function NavUser({
   user,
@@ -32,7 +38,7 @@ export function NavUser({
 
   const handleLogout = () => {
     localStorage.clear();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
@@ -51,14 +57,16 @@ export function NavUser({
               </Avatar>
               <div className="grid flex-1 text-left text-lg leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-sm text-muted-foreground">{user.email}</span>
+                <span className="truncate text-sm text-muted-foreground">
+                  {user.email}
+                </span>
               </div>
               <EllipsisVerticalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? 'bottom' : 'right'}
+            side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
@@ -73,6 +81,18 @@ export function NavUser({
                   <span className="truncate font-medium">{user.name}</span>
                 </div>
               </div>
+              <Link href="profile">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-lg hover:bg-gray-100">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg">
+                      <Settings />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-lg leading-tight cursor-pointer ">
+                    <span className="truncate font-medium">Ubah Password</span>
+                  </div>
+                </div>
+              </Link>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem

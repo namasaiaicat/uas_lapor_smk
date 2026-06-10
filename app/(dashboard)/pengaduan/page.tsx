@@ -60,6 +60,9 @@ import { Search, Trash2, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -244,6 +247,56 @@ export default function PengaduanPage() {
       toast.error("Terjadi kesalahan jaringan");
     } finally {
       setKategoriSubmitting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (filterKategori && filterKategori !== "all")
+        params.append("id_kategori", filterKategori);
+
+      const res = await fetch(`/api/pengaduan?${params.toString()}`);
+      const json = await res.json();
+
+      if (!json.success)
+        return toast.error("Gagal mengambil data untuk export");
+
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text("Daftar Pengaduan", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Dicetak: ${new Date().toLocaleDateString("id-ID")}`, 14, 22);
+
+      autoTable(doc, {
+        startY: 28,
+        head: [
+          [
+            "ID",
+            "Judul Laporan",
+            "Kategori",
+            "Pelapor",
+            "Tgl Kejadian",
+            "Status",
+          ],
+        ],
+        body: (json.data as Pengaduan[]).map((p) => [
+          p.id_pengaduan,
+          p.judul_laporan,
+          p.kategori?.nama_kategori ?? "-",
+          p.user?.nama_lengkap ?? "-",
+          new Date(p.tgl_kejadian).toLocaleDateString("id-ID"),
+          p.status,
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [41, 128, 185] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      doc.save(`pengaduan-${Date.now()}.pdf`);
+    } catch {
+      toast.error("Gagal export PDF");
     }
   };
 
@@ -654,6 +707,14 @@ export default function PengaduanPage() {
               Kelola Kategori
             </Button>
           )}
+
+          <Button
+            variant="outline"
+            className="hidden md:flex h-10 font-semibold text-base px-6"
+            onClick={handleExportPDF}
+          >
+            <Download className="size-4 mr-2" /> Export PDF
+          </Button>
         </div>
 
         {/* ── ADMIN: Tabel desktop ── */}
