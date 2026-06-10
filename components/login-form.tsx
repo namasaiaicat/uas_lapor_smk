@@ -27,7 +27,7 @@ export function LoginForm({
     });
 
     if (result?.error) {
-      toast.error("Kredensial yang anda masukkan Salah!");
+      toast.error("Kredensial salah / akun nonaktif!");
     } else {
       router.push("/dashboard");
     }

@@ -287,7 +287,78 @@ export default function PengaduanPage() {
             </TableBody>
           </Table>
         </div>
+        {/* ── Card Mobile ── */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : pengaduans.length === 0 ? (
+            <div className="flex flex-col items-center py-14 text-muted-foreground">
+              <FileText className="w-10 h-10 mb-3 opacity-40" />
+              <p className="font-medium">Tidak ada data pengaduan</p>
+            </div>
+          ) : (
+            pengaduans.map((p) => (
+              <div
+                key={p.id_pengaduan}
+                className="rounded-xl border bg-card p-4 flex flex-col gap-3 odd:bg-muted/30"
+              >
+                {/* Info */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-base truncate">
+                      {p.judul_laporan}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {p.user.nama_lengkap} · {p.user.nis_nip}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs px-2.5 py-0.5 rounded-full border font-medium ${statusColor(p.status)}`}
+                  >
+                    {p.status}
+                  </span>
+                </div>
+                <div className="text-sm text-muted-foreground flex gap-4">
+                  <span>{p.kategori.nama_kategori}</span>
+                  <span>{formatDate(p.tgl_kejadian)}</span>
+                </div>
+                <p className="text-sm line-clamp-2 text-foreground/80">
+                  {p.isi_laporan}
+                </p>
 
+                {/* Aksi */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    className="h-10 flex-1 text-sm"
+                    onClick={() => setDetailModal(p)}
+                  >
+                    <Info className="size-4 mr-2" />
+                    Detail
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 text-blue-500 hover:text-blue-600"
+                    onClick={() => setRestoreTarget(p.id_pengaduan)}
+                  >
+                    <ArchiveRestore className="size-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTarget(p.id_pengaduan)}
+                  >
+                    <Trash2 className="size-5" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
         {/* ── Modal: Detail ── */}
         <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
           <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">

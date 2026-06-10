@@ -25,11 +25,16 @@ export async function GET(request: NextRequest) {
     const { id_user, role } = session.user;
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const id_kategori = searchParams.get("id_kategori") || "";
 
     const whereClause: Prisma.PengaduanWhereInput = { is_deleted: 0 };
 
     if (role === "siswa") {
       whereClause.id_user = id_user;
+    }
+
+    if (id_kategori) {
+      whereClause.id_kategori = id_kategori;
     }
 
     if (search) {

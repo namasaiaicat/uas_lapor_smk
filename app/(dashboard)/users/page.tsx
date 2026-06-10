@@ -412,17 +412,54 @@ export default function UserPage() {
                   key={user.id_user}
                   className="rounded-xl border bg-card p-4 flex flex-col gap-3 odd:bg-muted/30"
                 >
+                  {/* Info user */}
                   <div className="min-w-0">
-                    <p className="font-medium text-lg truncate">
-                      {user.nama_lengkap}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-lg truncate">
+                        {user.nama_lengkap}
+                      </p>
+                      <span
+                        className={`shrink-0 text-xs px-2.5 py-0.5 rounded-full border font-medium ${
+                          user.is_active === 1
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : "bg-red-100 text-red-800 border-red-200"
+                        }`}
+                      >
+                        {user.is_active === 1 ? "Aktif" : "Nonaktif"}
+                      </span>
+                    </div>
                     <p className="text-muted-foreground text-sm">
-                      NIS/NIP: {user.nis_nip} | @{user.username}
+                      NIS/NIP: {user.nis_nip} · @{user.username}
                     </p>
                     <p className="text-sm font-semibold text-primary mt-1 capitalize">
                       {user.role}
                     </p>
                   </div>
+
+                  {/* Select status */}
+                  <Select
+                    value={String(user.is_active)}
+                    onValueChange={(val) =>
+                      handleStatusChange(user.id_user, val)
+                    }
+                  >
+                    <SelectTrigger className="h-10 text-sm w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem
+                          key={s.value}
+                          value={s.value}
+                          className="text-sm"
+                        >
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Aksi */}
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
